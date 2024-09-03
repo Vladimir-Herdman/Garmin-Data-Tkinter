@@ -42,7 +42,7 @@ class ShowData:
 
 
         # make canvas so scroll wheel can be added
-        canvas_back = Canvas(self.root, bg='gray75')
+        canvas_back = Canvas(self.root, bg='#3a3b3c')
         canvas_back.grid(column=0, row=0, sticky=(N, W, E, S))
             # scroll wheel
         scroll_bar_canvas = ttk.Scrollbar(self.root, orient=VERTICAL, command=canvas_back.yview)
@@ -94,6 +94,8 @@ class ShowData:
             self.data_over_time(self.run_frame, self.run_df, 'run')
             self.create_activity_map(self.run_frame, self.run_df)
             self.create_activity_heatmap(self.run_frame, self.run_df)
+            if self.run_df.shape[0] > 3:
+                self.place_data_records(self.run_frame, self.run_df)
         else:
             self.no_data(self.run_frame, 'run')
 
@@ -101,6 +103,8 @@ class ShowData:
             self.data_over_time(self.bike_frame, self.bike_df, 'bike')
             self.create_activity_map(self.bike_frame, self.bike_df)
             self.create_activity_heatmap(self.bike_frame, self.bike_df)
+            if self.bike_df.shape[0] > 3:
+                self.place_data_records(self.bike_frame, self.bike_df)
         else:
             self.no_data(self.bike_frame, 'bike')
 
@@ -108,6 +112,8 @@ class ShowData:
             self.data_over_time(self.swim_frame, self.swim_df, 'swim')
             self.create_activity_map(self.swim_frame, self.swim_df)
             self.create_activity_heatmap(self.swim_frame, self.swim_df)
+            if self.swim_df.shape[0] > 3:
+                self.place_data_records(self.swim_frame, self.swim_df)
         else:
             self.no_data(self.swim_frame, 'swim')
 
@@ -115,7 +121,51 @@ class ShowData:
         self.root.protocol("WM_DELETE_WINDOW", self.window_close_func)
 
         # size correction
-        self.root.geometry("800x600")
+        self.root.geometry("1200x800")
+
+    def place_data_records(self, frame, df):
+        """
+        Places the records of the time last week, 
+        month, year time frames
+        """
+        last_week = 6
+        last_month = 29
+        last_year = 364
+
+        font_basic = ("Courier", 15)
+
+        week_frame = Frame(frame, bg="#ccb1b1")
+        week_frame.grid(column=1, row=0, sticky=(N, E, S, W), padx=24, pady=24)
+        week_df = df.iloc[0:last_week]
+        total = week_df["miles"].sum()
+        maximum = week_df["miles"].max()
+        avg = round(week_df["miles"].mean(), 3)
+        double_days = week_df[week_df["times"] > 1]["times"].count()
+        full_text = f"\nTotal Miles:  {total} {"miles" if total != 1 else "mile"}\n\nDouble Days:  {double_days}\n\nHighest In one Day:  {maximum}\n\nAverage Every Day:  {avg}"
+        week_label = Label(week_frame, bg="#ccb1b1", font=font_basic, text=full_text)
+        week_label.grid(column=0, row=0, sticky=(W, E), padx=12, pady=12)
+
+        month_frame = Frame(frame, bg="#ccb1b1")
+        month_frame.grid(column=1, row=2, sticky=(N, E, S, W), padx=24, pady=24)
+        month_df = df.iloc[0:last_month]
+        total = month_df["miles"].sum()
+        maximum = month_df["miles"].max()
+        avg = round(month_df["miles"].mean(), 3)
+        double_days = month_df[month_df["times"] > 1]["times"].count()
+        full_text = f"\nTotal Miles:  {total} {"miles" if total != 1 else "mile"}\n\nDouble Days:  {double_days}\n\nHighest In one Day:  {maximum}\n\nAverage Every Day:  {avg}"
+        month_label = Label(month_frame, bg="#ccb1b1", font=font_basic, text=full_text)
+        month_label.grid(column=0, row=0, sticky=(W, E), padx=12, pady=12)
+
+        year_frame = Frame(frame, bg="#ccb1b1")
+        year_frame.grid(column=1, row=4, sticky=(N, E, S, W), padx=24, pady=24)
+        year_df = df.iloc[0:last_year]
+        total = year_df["miles"].sum()
+        maximum = year_df["miles"].max()
+        avg = round(year_df["miles"].mean(), 3)
+        double_days = year_df[year_df["times"] > 1]["times"].count()
+        full_text = f"\nTotal Miles:  {total} {"miles" if total != 1 else "mile"}\n\nDouble Days:  {double_days}\n\nHighest In one Day:  {maximum}\n\nAverage Every Day:  {avg}"
+        year_label = Label(year_frame, bg="#ccb1b1", font=font_basic, text=full_text)
+        year_label.grid(column=0, row=0, sticky=(W, E), padx=12, pady=12)
     
     def create_all_dfs(self, activities):
         # set up lists for data being taken
@@ -130,7 +180,10 @@ class ShowData:
         for activity in activities:
             if any(x in activity['activityType']['typeKey'] for x in ('run', 'cycling', 'swim')):
                 dates.append(activity['startTimeGMT'].split()[0])
-                avgHR.append(activity['averageHR'])
+                try:
+                    avgHR.append(activity['averageHR'])
+                except KeyError:
+                    avgHR.append(145.0)
                 miles.append(round(activity['distance'] / 1600, 3))
                 activity_type.append(activity['activityType']['typeKey'])
                 times_activity_done.append(1)
@@ -167,7 +220,6 @@ class ShowData:
         clean_dates_series = pd.date_range('2003-08-14', self.today)
         if self.run_data:
             run_df = run_df.groupby(run_df.index).agg({'times': 'sum', 'miles': 'sum', 'avgHR': 'mean', 'loc': 'first'})
-            run_df.rename(columns = {'times':'runs'}, inplace = True)
             run_df['avgHR'] = run_df['avgHR'].round(3)
             run_df = run_df.reset_index()
                 # clean up missing values
@@ -181,7 +233,6 @@ class ShowData:
             # biking
         if self.bike_data:
             bike_df = bike_df.groupby(bike_df.index).agg({'times': 'sum', 'miles': 'sum', 'avgHR': 'mean', 'loc': 'first'})
-            bike_df.rename(columns = {'times':'bikings'}, inplace = True)
             bike_df['avgHR'] = bike_df['avgHR'].round(3)
             bike_df = bike_df.reset_index()
                 # clean up missing values
@@ -195,7 +246,6 @@ class ShowData:
             # swimming
         if self.swim_data:
             swim_df = swim_df.groupby(swim_df.index).agg({'times': 'sum', 'miles': 'sum', 'avgHR': 'mean', 'loc': 'first'})
-            swim_df.rename(columns = {'times':'swims'}, inplace = True)
             swim_df['avgHR'] = swim_df['avgHR'].round(3)
             swim_df = swim_df.reset_index()
                 # clean up missing values
@@ -212,7 +262,7 @@ class ShowData:
     
     def data_over_time(self, frame, df, specializer):
         """
-        Will generate the charts of the last week, 
+        Will generate the charts of the last year, 
         month, and year, then add it to frame
         """
         # variables for remembering dates
@@ -220,25 +270,30 @@ class ShowData:
         last_month = 29
         last_year = 364
 
-        # dictionary for created png photo references
+        # color based on activity
+        colors = {
+            "run": "#fc6b03",
+            "bike": "#eb6157",
+            "swim": "#4da3d1"
+        }
 
         # last week
             # make the chart
         week_chart = Chart(df.iloc[0:last_week]).mark_area().encode(
             x=alt.X('date', title='Last Week'),
             y='miles',
-            color=alt.value('#fc6b03'),
+            color=alt.value(colors[specializer]),
             opacity=alt.value(0.4)
         ) + \
         Chart(df.iloc[0:last_week]).mark_line().encode(
             x=alt.X('date'),
             y='miles',
-            color=alt.value('#fc6b03')
+            color=alt.value(colors[specializer])
         ) + \
         Chart(df.iloc[0:last_week]).mark_circle().encode(
             x=alt.X('date'),
             y='miles',
-            color=alt.value('#fc5e03'),
+            color=alt.value(colors[specializer]),
             size=alt.value(50))
             # save chart as a PNG image
         week_png_data = vlc.vegalite_to_png(week_chart.to_json(), scale=2) # vl_version="5.17.0"
@@ -259,18 +314,18 @@ class ShowData:
         month_chart = Chart(df.iloc[0:last_month]).mark_area().encode(
             x=alt.X('date', title='Last Month'),
             y='miles',
-            color=alt.value('#fc6b03'),
+            color=alt.value(colors[specializer]),
             opacity=alt.value(0.4)
         ) + \
         Chart(df.iloc[0:last_month]).mark_line().encode(
             x=alt.X('date'),
             y='miles',
-            color=alt.value('#fc6b03')
+            color=alt.value(colors[specializer])
         ) + \
         Chart(df.iloc[0:last_month]).mark_circle().encode(
             x=alt.X('date'),
             y='miles',
-            color=alt.value('#fc5e03'),
+            color=alt.value(colors[specializer]),
             size=alt.value(50))
             # save chart as a PNG image
         month_png_data = vlc.vegalite_to_png(month_chart.to_json(), scale=2) # vl_version="5.17.0"
@@ -291,13 +346,13 @@ class ShowData:
         year_chart = Chart(df.iloc[0:last_year]).mark_area().encode(
             x=alt.X('date', title='Last Year'),
             y='miles',
-            color=alt.value('#fc6b03'),
+            color=alt.value(colors[specializer]),
             opacity=alt.value(0.4)
         ) + \
         Chart(df.iloc[0:last_year]).mark_line().encode(
             x=alt.X('date'),
             y='miles',
-            color=alt.value('#fc6b03'))
+            color=alt.value(colors[specializer]))
             # save chart as a PNG image
         year_png_data = vlc.vegalite_to_png(year_chart.to_json(), scale=2) # vl_version="5.17.0"
         with open("chart2_"+specializer+".png", "wb") as f:

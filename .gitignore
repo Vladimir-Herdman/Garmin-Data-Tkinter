@@ -1,2 +1,12 @@
 # pycache created files
 __pycache__/
+
+# tester files
+tkinter_tests.py
+saved_personal
+
+# photo files
+.DS_Store
+
+# settings used
+.vscode

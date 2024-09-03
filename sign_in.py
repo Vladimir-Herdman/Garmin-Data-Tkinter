@@ -37,7 +37,10 @@ class SignIn():
         ttk.Label(self.sign_in_frame, text='Password:').grid(column=0, row=2, sticky=E)
             # button
         self.sign_in_button = Button(self.sign_in_frame, text='Sign In', command=self.sign_in_func, bg='lightblue')
-        self.sign_in_button.grid(column=0, row=3, columnspan=2, sticky=(W, E))
+        self.sign_in_button.grid(column=0, row=3, columnspan=2, sticky=(W, E), pady=3)
+
+        self.load_button = Button(self.sign_in_frame, text='Load Saved', command=self.load_saved_func, bg='lightblue')
+        self.load_button.grid(column=0, row=4, columnspan=2, sticky=(W, E), pady=3)
 
         self.show_password_button = Button(self.sign_in_frame, text='Show', command=self.show_password_func, bg='lightgray')
         self.show_password_button.grid(column=2, row=2, sticky=W)
@@ -45,6 +48,13 @@ class SignIn():
         root.after(100, self.user_entry.focus)  # cursor starts in this field, so users don't need to click to before starting to type
         root.bind('<Return>', self.sign_in_func)
 
+    def load_saved_func(self, *args):
+        with open('saved_personal', 'r') as saved_data:
+            data_list = saved_data.read().split(",")
+            self.username.set(data_list[0])
+            self.password.set(data_list[1])
+        self.sign_in_func()
+    
     def sign_in_func(self, *args):
         '''
         Button function command that is the logic for the username and password that works for Garmin sign in
@@ -81,10 +91,9 @@ class SignIn():
             ShowData(self.root, self.all_activities, str(date.today()))
         except GarthHTTPError:
             # label error in signing in, move button
-            self.sign_in_button.destroy()
+            self.sign_in_button.grid(column=0, row=4, columnspan=2, sticky=(W, E), pady=3)
+            self.load_button.grid(column=0, row=5, columnspan=2, sticky=(W, E), pady=3)
             ttk.Label(self.sign_in_frame, text='No Account Found', foreground='red').grid(column=1, row=3, sticky=W)
-            self.sign_in_button = Button(self.sign_in_frame, text='Sign In', command=self.sign_in_func, bg='lightblue')
-            self.sign_in_button.grid(column=0, row=4, columnspan=2, sticky=(W, E))
                 # remove wrong entries and refocus
             self.user_entry.delete(0, 'end')
             self.pass_entry.delete(0, 'end')

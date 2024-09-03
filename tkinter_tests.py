@@ -230,3 +230,9 @@ week_label.grid(column=0, row=0, sticky=(N, W, E, S))
 
 root.mainloop()
 '''
+full_text = """
+    man
+    women
+        people      
+    """
+print(full_text)
