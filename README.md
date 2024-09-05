@@ -6,6 +6,15 @@ creating graphs and data points similar to STRAVA, what
 with their being weekly and monthly choices in seeing my
 collected running data.
 
+## Process
+
+The project specifically entailed getting the running data 
+from Garmin and storing all of it in pandas data frames,  
+running data aggregation techniques on it, and then 
+graphing the processed data using altair.  The created 
+graphs were then converted to images and placed into a 
+tkinter window to show in an interactive graphical interface.
+
 It gave me an insight into how social media platforms 
 like STRAVA, and even Garmin to an extent, take their 
 collected data and then use that to create information 
